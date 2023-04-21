@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+  <meta charset='utf-8'>
+  </meta>
+  <meta name='viewport' content='viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1'>
+  </meta>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+
+<body style='background-color: #222; color: #eee; overflow: hidden; width: fit-content;'>
+  <canvas id='scene' style='position: absolute; left: 0; top: 0; z-index: -1;'></canvas>
+
+  <script type='module'>
+    import * as THREE from 'three'
+    import './js/events/onDropFile.js'
+    import Utils from './js/threejs/Utils.js'
+    import Loader from './js/threejs/Loader.js'
+    import Drawer from './js/threejs/Drawer.js'
+    import Viewer from './js/threejs/Viewer.js'
+    import ViewerGUI from './js/gui/ViewerGUI.js'
+    import MeasureGroup from './js/threejs/MeasureGroup.js'
+    import { pointer, raycaster } from './js/events/onPointerMove.js'
+
+    const viewer = new Viewer(document.getElementById('scene'))
+    const gridHelper = new THREE.GridHelper(5, 10)
+    viewer.add(gridHelper)
+    const measureGroup = new MeasureGroup()
+    viewer.add(measureGroup)
+
+    const gui = new ViewerGUI(viewer)
+    var m_meshes = []
+    const addMeasureUI = () => {
+      const folder = gui.addFolder('Measure')
+
+      const measureControls = {
+        type: 1,
+        measure: false
+      }
+
+      folder.add(measureControls, 'type', [1, 2, 3]).onChange(v => {
+        measureGroup.clickPointsMaxCount = v
+        measureGroup.reset()
+      })
+      folder.add(measureGroup, 'visible')
+      folder.add(measureControls, 'measure')
+
+      window.addEventListener('pointerdown', () => {
+        if (measureControls.measure === false) return
+        raycaster.setFromCamera(pointer, viewer.camera)
+        const intersects = raycaster.intersectObjects(m_meshes)
+        if (intersects.length > 0) {
+          measureGroup.addClickPoint(intersects[0])
+        }
+      })
+    }
+    addMeasureUI()
+
+    window.THREE = THREE
+    window.Utils = Utils
+    window.Viewer = viewer
+    window.onDropFile = async (file) => {
+      const extension = file.name.split('.').pop().toLowerCase()
+      const startTime = Date.now()
+      const model = await Loader.loadFile(file)
+      model.name = file.name
+      console.log(`loadFile: ${Date.now() - startTime}ms`)
+
+      const box = new THREE.Box3()
+      box.setFromObject(model)
+      const size = box.getSize(new THREE.Vector3())
+      if (size.y > 1000) model.scale.set(0.001, 0.001, 0.001)
+      else if (size.y > 100) model.scale.set(0.01, 0.01, 0.01)
+
+      switch (extension) {
+        case 'json':
+          viewer.add(model)
+          break
+        default:
+          viewer.add(model, true, 1.5)
+          break
+      }
+      console.log(`addScene: ${Date.now() - startTime}ms`)
+
+      m_meshes = Utils.getMeshes(viewer.scene).filter(m => m.parent != measureGroup)
+    }
+  </script>
+</body>
+
+</html>
