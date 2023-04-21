@@ -26,10 +26,12 @@
     import Loader from './js/threejs/Loader.js'
     import Drawer from './js/threejs/Drawer.js'
     import Viewer from './js/threejs/Viewer.js'
+    import ViewerGUI from './js/gui/ViewerGUI.js'
 
     const viewer = new Viewer(document.getElementById('scene'))
     const gridHelper = new THREE.GridHelper(5, 10)
     viewer.add(gridHelper)
+    const gui = new ViewerGUI(viewer)
 
     window.THREE = THREE
     window.Viewer = viewer
