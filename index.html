@@ -24,6 +24,7 @@
     import './js/events/onDropFile.js'
     import Utils from './js/threejs/Utils.js'
     import Loader from './js/threejs/Loader.js'
+    import Drawer from './js/threejs/Drawer.js'
     import Viewer from './js/threejs/Viewer.js'
 
     const viewer = new Viewer(document.getElementById('scene'))
@@ -54,6 +55,8 @@
           break
       }
       console.log(`addScene: ${Date.now() - startTime}ms`)
+
+      Drawer.drawBBox(model)
     }
   </script>
 </body>
