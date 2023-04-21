@@ -2,6 +2,14 @@ import * as THREE from 'three'
 
 export default class Utils {
 
+  static hashCode(vector3) {
+    let hash = 17;
+    hash = hash * 31 + vector3.x;
+    hash = hash * 31 + vector3.y;
+    hash = hash * 31 + vector3.z;
+    return hash;
+  }
+
   static hasMesh(model) {
     if (model instanceof THREE.Mesh) return true
 
@@ -31,7 +39,7 @@ export default class Utils {
     let faceIndex = 0
     for (let i = 0; i < positionAttribute.count; i++) {
       p.fromBufferAttribute(positionAttribute, i)
-      const key = p.lengthSq()
+      const key = this.hashCode(p)
       let vertexIndex = verticesIndexMap.get(key)
       if (vertexIndex == null) {
         vertexIndex = vertices.length
