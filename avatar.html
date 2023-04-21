@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  </meta>
+  <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1">
+  </meta>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.18"></script>
+</head>
+
+<body style="background-color: #222; color: #eee; overflow: hidden; width: fit-content;">
+  <canvas id="scene" style="position: absolute; left: 0; top: 0; z-index: -1;"></canvas>
+
+  <script type="module">
+    import * as THREE from 'three'
+    import './js/events/onDropFile.js'
+    import Loader from './js/threejs/Loader.js'
+    import AvatarViewer from './js/threejs/AvatarViewer.js'
+    import { AddCameraControl } from './js/gui/GUITool.js'
+    window.THREE = THREE
+    window.Loader = Loader
+    window.Viewer = new AvatarViewer(document.getElementById('scene'))
+    window.AddCameraControl = AddCameraControl
+    main()
+  </script>
+
+  <script>
+    const gui = new lil.GUI({ width: 350 })
+    const cameraFolder = gui.addFolder('Camera')
+    const animFolder = gui.addFolder('Animations')
+    const animInfo = {
+      fade: false,
+      repeats: 1,
+    }
+
+    const updateAnimGUI = () => {
+      if (!Viewer || !Viewer.mixer) return
+
+      for (let i = animFolder.children.length - 1; i >= 0; i--) {
+        animFolder.children[i].destroy()
+      }
+
+      animFolder.add(animInfo, 'fade')
+      animFolder.add(animInfo, 'repeats', 1, 100, 1)
+      animFolder.add(Viewer.mixer, 'timeScale', 0, 10, 1)
+      animFolder.add(Viewer.mixer, 'normalizedTime', 0, 1, 0.0001).listen().decimals(4)
+
+      const btns = {
+        'Reset': () => {
+          Viewer.mixer.resetAction()
+        },
+        'Clear': () => {
+          Viewer.mixer.clear()
+          Viewer._tempClips = {}
+          updateAnimGUI()
+        }
+      }
+      for (const key in btns) {
+        animFolder.add(btns, key)
+      }
+
+      const anims = {}
+      for (const key in Viewer.mixer.actions) {
+        anims[key] = () => {
+          if (!animInfo.fade) Viewer.mixer.resetAction()
+          let repeats = Math.max(animInfo.repeats, 1)
+          Viewer.mixer.playAsync(key, repeats)
+        }
+        animFolder.add(anims, key)
+      }
+    }
+
+    const main = () => {
+      const gridHelper = new THREE.GridHelper(5, 10)
+      Viewer.scene.add(gridHelper)
+
+      cameraFolder.add({ Reset: () => { Viewer.camera.fov = 60; Viewer.controls.reset(); Viewer.zoom2Avatar(1.5) } }, 'Reset')
+      cameraFolder.add({ Focus: () => { Viewer.zoom2Avatar(1.5) } }, 'Focus')
+      AddCameraControl(cameraFolder, Viewer.camera)
+    }
+
+    window.onDropFile = async (file) => {
+      const extension = file.name.split('.').pop().toLowerCase()
+      const startTime = Date.now()
+      const model = await Loader.loadFile(file)
+      console.log(`loadFile: ${Date.now() - startTime}ms`)
+
+      switch (extension) {
+        case 'json':
+          Viewer.add(model)
+          break
+        default:
+          Viewer.addAvatar(file.name, model)
+          updateAnimGUI()
+          break
+      }
+      console.log(`addScene: ${Date.now() - startTime}ms`)
+    }
+  </script>
+</body>
+
+</html>
