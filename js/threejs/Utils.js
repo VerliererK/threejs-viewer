@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { computeMorphedAttributes } from 'three/addons/utils/BufferGeometryUtils.js'
 
 export default class Utils {
 
@@ -28,27 +29,38 @@ export default class Utils {
     return meshs
   }
 
-  static extractFromBuffer(mesh, localToWorld = true) {
-    //TODO: Support indexed BufferGeometry
-    const positionAttribute = (mesh.geometry.index != null) ? mesh.geometry.toNonIndexed().getAttribute('position') : mesh.geometry.getAttribute('position')
-    const p = new THREE.Vector3()
+  static extractFromBuffer(mesh, localToWorld = true, computeMorphed = false) {
+    let vertices = []
+    let faces
+    const positionAttribute = computeMorphed ? computeMorphedAttributes(mesh).morphedPositionAttribute : mesh.geometry.getAttribute('position')
 
-    const vertices = []
-    const verticesIndexMap = new Map()
-    const faces = new Array(positionAttribute.count / 3).fill(0).map(() => new Array(3))
-    let faceIndex = 0
-    for (let i = 0; i < positionAttribute.count; i++) {
-      p.fromBufferAttribute(positionAttribute, i)
-      const key = this.hashCode(p)
-      let vertexIndex = verticesIndexMap.get(key)
-      if (vertexIndex == null) {
-        vertexIndex = vertices.length
-        verticesIndexMap.set(key, vertexIndex)
-        vertices.push(new THREE.Vector3(p.x, p.y, p.z))
+    if (mesh.geometry.index != null) {
+      faces = new Array(mesh.geometry.index.count / 3).fill(0).map(() => new Array(3))
+      for (let i = 0; i < mesh.geometry.index.count; i++) {
+        const index = mesh.geometry.index.getX(i)
+        faces[Math.floor(i / 3)][i % 3] = index
       }
-      faces[faceIndex][i % 3] = vertexIndex
-      if (i % 3 == 2) {
-        faceIndex++
+
+      const p = new THREE.Vector3()
+      for (let i = 0; i < positionAttribute.count; i++) {
+        p.fromBufferAttribute(positionAttribute, i)
+        vertices[i] = new THREE.Vector3(p.x, p.y, p.z)
+      }
+    } else {
+      const p = new THREE.Vector3()
+      const verticesIndexMap = new Map()
+      vertices = []
+      faces = new Array(positionAttribute.count / 3).fill(0).map(() => new Array(3))
+      for (let i = 0; i < positionAttribute.count; i++) {
+        p.fromBufferAttribute(positionAttribute, i)
+        const key = this.hashCode(p)
+        let vertexIndex = verticesIndexMap.get(key)
+        if (vertexIndex == null) {
+          vertexIndex = vertices.length
+          verticesIndexMap.set(key, vertexIndex)
+          vertices.push(new THREE.Vector3(p.x, p.y, p.z))
+        }
+        faces[Math.floor(i / 3)][i % 3] = vertexIndex
       }
     }
 
