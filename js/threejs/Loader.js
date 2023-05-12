@@ -4,6 +4,7 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
+import { TGSLoader } from './TGSLoader.js'
 
 const libsRoot = 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/libs'
 
@@ -64,6 +65,9 @@ export default class Loader {
         case 'obj':
           const objLoader = new OBJLoader()
           return await objLoader.loadAsync(url)
+        case 'tgs':
+          const tgsLoader = new TGSLoader()
+          return await tgsLoader.loadAsync(url)
         default:
           console.error("Not Support Extension: " + extension)
           resolve(null)
@@ -100,6 +104,10 @@ export default class Loader {
         case 'obj':
           const objLoader = new OBJLoader()
           resolve(objLoader.parse(contents))
+          break
+        case 'tgs':
+          const tgsLoader = new TGSLoader()
+          resolve(tgsLoader.parse(contents))
           break
         default:
           console.error("Not Support Extension: " + extension)
