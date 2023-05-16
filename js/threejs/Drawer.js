@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 
 const loader = new FontLoader();
 loader.load('https://cdn.jsdelivr.net/npm/three/examples/fonts/droid/droid_sans_bold.typeface.json', function (font) {
@@ -35,6 +38,23 @@ export default class Drawer {
       line_points.map(p => new THREE.Vector3(p[0], p[1], p[2]))
     const geometry = new THREE.BufferGeometry().setFromPoints(points)
     const line = new THREE.Line(geometry, material)
+    return line
+  }
+
+  static drawLine2(line_points, linewidth = 1, color = 0x0000ff) {
+    const geometry = new LineGeometry()
+    geometry.setPositions(line_points.flat())
+    const matLine = new LineMaterial({
+      color: color,
+      linewidth: linewidth,
+      // vertexColors: true,
+      // resolution:  // to be set by renderer, eventually
+      dashed: false,
+      alphaToCoverage: true,
+    })
+    matLine.resolution.set(window.innerWidth, window.innerHeight)
+    const line = new Line2(geometry, matLine)
+    line.computeLineDistances()
     return line
   }
 
