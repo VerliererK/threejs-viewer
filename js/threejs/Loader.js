@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { TGSLoader } from './TGSLoader.js'
 
-const libsRoot = 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/libs'
+const libsRoot = 'https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/libs'
 
 export default class Loader {
 
@@ -44,6 +44,7 @@ export default class Loader {
   static parseGLTF(result) {
     const scene = result.scene
     scene.animations.push(...result.animations)
+    scene.updateMatrixWorld()  // https://github.com/donmccurdy/three-gltf-viewer/issues/330
     return scene
   }
 
