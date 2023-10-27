@@ -3,11 +3,19 @@ import { computeMorphedAttributes } from 'three/addons/utils/BufferGeometryUtils
 
 export default class Utils {
 
+  static floatToIntBits(floatValue) {
+    const buffer = new ArrayBuffer(4);
+    const view = new DataView(buffer);
+    view.setFloat32(0, floatValue, false);
+    return view.getInt32(0, false);
+  }
+
   static hashCode(vector3) {
-    let hash = 17;
-    hash = hash * 31 + vector3.x;
-    hash = hash * 31 + vector3.y;
-    hash = hash * 31 + vector3.z;
+    let hash = 1;
+    hash = 31 * hash + this.floatToIntBits(vector3.x);
+    hash = 31 * hash + this.floatToIntBits(vector3.y);
+    hash = 31 * hash + this.floatToIntBits(vector3.z);
+
     return hash;
   }
 
