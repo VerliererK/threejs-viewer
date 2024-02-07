@@ -14,6 +14,8 @@ export default class Viewer {
     this.controls = null
     this.clock = null
     this.fpsLimiter = new FPSLimiter(30)
+    this.selectedObject = null
+    this.selectedBBox = null
 
     this.initScene($canvas)
     Loader._renderer = this.renderer
@@ -60,6 +62,17 @@ export default class Viewer {
     this.controls.enablePan = true
     this.controls.update()
 
+    this.sceneHelpers = new THREE.Group()
+    this.sceneHelpers.name = 'SceneHelpers'
+    this.scene.add(this.sceneHelpers)
+
+    const gridHelper = new THREE.GridHelper(5, 10)
+    this.sceneHelpers.add(gridHelper)
+
+    this.selectedBBox = new THREE.Box3Helper(new THREE.Box3())
+    this.selectedBBox.visible = false;
+    this.sceneHelpers.add(this.selectedBBox)
+
     window.addEventListener('resize', this.onWindowResize.bind(this))
     this.FixedUpdate()
   }
@@ -74,6 +87,9 @@ export default class Viewer {
   }
 
   onRender() {
+    if (this.selectedObject && this.selectedBBox.visible) {
+      this.selectedBBox.box.setFromObject(this.selectedObject)
+    }
     this.renderer.render(this.scene, this.camera)
   }
 
@@ -89,6 +105,7 @@ export default class Viewer {
 
   add(object, zoom2fit = false, zoom2fit_offset = 1) {
     this.scene.add(object)
+    this.selectObject(object)
     if (zoom2fit) {
       this.zoom2fit(object, zoom2fit_offset)
     }
@@ -102,6 +119,47 @@ export default class Viewer {
       if (child.texture && child.texture.dispose) child.texture.dispose()
     })
     this.scene.remove(object)
+    if (object.getObjectById(this.selectedObject?.id)) {
+      this.selectObject(null)
+    }
+  }
+
+  selectObject(object) {
+    if (object != null && object.type.includes('Helper')) return
+    this.selectedObject = object
+    this.selectedBBox.visible = this.selectedObject != null
+    if (this.selectedObject != null) {
+      this.selectedBBox.box.setFromObject(this.selectedObject)
+    }
+  }
+
+  initSelectObjectEvent() {
+    const raycaster = new THREE.Raycaster()
+    const pointer = new THREE.Vector2()
+    const pointerDown = { x: 0, y: 0 }
+
+    this.$canvas.addEventListener('dblclick', () => {
+      if (this.selectedObject) {
+        this.zoom2fit(this.selectedObject)
+      }
+    })
+
+    this.$canvas.addEventListener('pointerdown', (event) => {
+      pointerDown.x = event.clientX
+      pointerDown.y = event.clientY
+    })
+
+    this.$canvas.addEventListener('pointerup', (event) => {
+      if (Math.abs(event.clientX - pointerDown.x) > 1) return
+      if (Math.abs(event.clientY - pointerDown.y) > 1) return
+
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+      pointer.y = - (event.clientY / window.innerHeight) * 2 + 1
+
+      raycaster.setFromCamera(pointer, this.camera)
+      const intersects = raycaster.intersectObjects(this.scene.children.slice(5))
+      this.selectObject((intersects.length > 0) ? intersects[0].object : null)
+    })
   }
 
   zoom2fit(object, zoom2fit_offset = 1.5) {
@@ -113,8 +171,8 @@ export default class Viewer {
     const center = bbox.getCenter(new THREE.Vector3())
     const size = bbox.getSize(new THREE.Vector3())
     const fov = camera.fov * (Math.PI / 180)
-    let radius = (size.y / 2) // use y to fit height
-    let cameraZ = Math.abs(radius / Math.tan(fov / 2)) * offset
+    const radius = (Math.max(size.x, size.y) / 2)
+    const cameraZ = center.z + Math.abs(radius / Math.tan(fov / 2)) * offset
     camera.position.set(center.x, center.y, cameraZ)
 
     if (controls) {

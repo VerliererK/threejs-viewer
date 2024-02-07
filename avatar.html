@@ -81,9 +81,6 @@
     }
 
     const main = () => {
-      const gridHelper = new THREE.GridHelper(5, 10)
-      Viewer.scene.add(gridHelper)
-
       cameraFolder.add({ Reset: () => { Viewer.camera.fov = 60; Viewer.controls.reset(); Viewer.zoom2Avatar(1.5) } }, 'Reset')
       cameraFolder.add({ Focus: () => { Viewer.zoom2Avatar(1.5) } }, 'Focus')
       AddCameraControl(cameraFolder, Viewer.camera)

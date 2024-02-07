@@ -30,11 +30,11 @@
     import ViewerGUI from './js/gui/ViewerGUI.js'
 
     const viewer = new Viewer(document.getElementById('scene'))
-    const gridHelper = new THREE.GridHelper(5, 10)
-    viewer.add(gridHelper)
+    viewer.initSelectObjectEvent()
     const gui = new ViewerGUI(viewer)
 
     window.THREE = THREE
+    window.Utils = Utils
     window.Viewer = viewer
     window.onDropFile = async (file) => {
       const extension = file.name.split('.').pop().toLowerCase()
@@ -58,8 +58,6 @@
           break
       }
       console.log(`addScene: ${Date.now() - startTime}ms`)
-
-      Drawer.drawBBox(model)
     }
   </script>
 </body>

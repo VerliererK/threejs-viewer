@@ -107,4 +107,11 @@ export default class Utils {
   static removeUnusedTracksKey(avatar, anim) {
     anim.tracks = anim.tracks.filter(track => avatar.getObjectByName(track.name.split('.')[0]))
   }
+
+  static getRoot(object) {
+    if (object.parent != null && object.parent.type != 'Scene') {
+      return this.getRoot(object.parent)
+    }
+    return object
+  }
 }
