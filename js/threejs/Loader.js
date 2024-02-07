@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { TGSLoader } from './TGSLoader.js'
+import { VRMLoaderPlugin } from 'https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2.0.10/+esm'
 
 const libsRoot = 'https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/libs'
 
@@ -69,6 +70,15 @@ export default class Loader {
         case 'tgs':
           const tgsLoader = new TGSLoader()
           return await tgsLoader.loadAsync(url)
+        case 'vrm':
+          const vrmLoader = new GLTFLoader()
+          vrmLoader.register((parser) => {
+            return new VRMLoaderPlugin(parser)
+          })
+          const vrm = await vrmLoader.loadAsync(url)
+          const scene = vrm.userData.vrm.scene
+          scene.rotateY(Math.PI)
+          return scene
         default:
           console.error("Not Support Extension: " + extension)
           resolve(null)
@@ -109,6 +119,17 @@ export default class Loader {
         case 'tgs':
           const tgsLoader = new TGSLoader()
           resolve(tgsLoader.parse(contents))
+          break
+        case 'vrm':
+          const vrmLoader = new GLTFLoader()
+          vrmLoader.register((parser) => {
+            return new VRMLoaderPlugin(parser)
+          })
+          vrmLoader.parse(contents, '', (vrm) => {
+            const scene = vrm.userData.vrm.scene
+            scene.rotateY(Math.PI)
+            resolve(scene)
+          })
           break
         default:
           console.error("Not Support Extension: " + extension)
